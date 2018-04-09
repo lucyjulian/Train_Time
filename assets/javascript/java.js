@@ -18,11 +18,14 @@ $("#add-train-btn").on("click", function(event) {
     // Grabs user input
     var trainName = $("#train-name-input").val().trim();
     var trainDest = $("#destination-input").val().trim();
-    var firstTimeConverted = moment($("#first-train-input").val().trim(), "HH:mm").subtract(1, "years");
-    
+    var firstTimeConverted = $("#first-train-input").val().trim();
+    //moment($("#first-train-input").val().trim(), "HH:mm").subtract(1, "years");
     var trainFrequency = $("#frequency-input").val().trim();
-    
-    
+
+    console.log("name: " + trainName);
+    console.log("dest: " + trainDest);
+    console.log("firstTimeConverted: " + firstTimeConverted);
+    console.log("train frequency: " + trainFrequency);
     // Clears all of the text-boxes
     $("#train-name-input").val("");
     $("#destination-input").val("");
@@ -37,15 +40,22 @@ $("#add-train-btn").on("click", function(event) {
     });
 });
 
-database.ref().on("child_added", function(ChildSnapshot) {
-    var trainFrequency = ChildSnapshot.val().frequency;
-    var firstTimeConverted = ChildSnapshot.val().firstTime;
-    var diffTime = moment().diff(moment(firstTimeConverted), "minutes");
-    var tRemainder = diffTime % trainFrequency;
-    var trMinutesAway = trainFrequency - tRemainder;
-    var nextTrain = moment().add(trMinutesAway, "minutes").format("hh:mm");
-    $("#train-table > tbody").append("<tr><td>" + ChildSnapshot.val().name + "</td><td>" + ChildSnapshot.val().destination + "</td><td>" +
-    ChildSnapshot.val().frequency + "</td><td>" + nextTrain + "</td><td>" + trMinutesAway + "</td></tr>");
-}, function(errorObject){
-    console.log("Errors handled: " + errorObject.code)
-});
+function firebaseTable(){
+
+    $("#train-table > tbody").html("");
+
+    database.ref().on("child_added", function(ChildSnapshot) {
+        var trainFrequency = ChildSnapshot.val().frequency;
+        var firstTimeConverted = moment(ChildSnapshot.val().firstTime, "HH:mm").subtract(1, "years");
+        var diffTime = moment().diff(moment(firstTimeConverted), "minutes");
+        var tRemainder = diffTime % trainFrequency;
+        var trMinutesAway = trainFrequency - tRemainder;
+        var nextTrain = moment().add(trMinutesAway, "minutes").format("hh:mm");
+        $("#train-table > tbody").append("<tr><td>" + ChildSnapshot.val().name + "</td><td>" + ChildSnapshot.val().destination + "</td><td>" +
+        ChildSnapshot.val().frequency + "</td><td>" + nextTrain + "</td><td>" + trMinutesAway + "</td></tr>");
+    }, function(errorObject){
+        console.log("Errors handled: " + errorObject.code)
+    });
+};
+firebaseTable();
+setInterval(firebaseTable, 60*1000);
